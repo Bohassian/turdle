@@ -26,6 +26,3 @@ services:
       - .:/turdle
     ports:
       - "7658:7658"
-    depends_on:
-      - web
-      - db

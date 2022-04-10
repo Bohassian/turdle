@@ -1,0 +1,118 @@
+* A suggestion on how to dev on Turdle
+
+this project is an opportunity to learn a thing or two while hacking on
+a silly and brilliant idea. one of those things is "containers". a project
+provided with a container promises a consistent development experience
+from one machine to another. yet, i (grant) have never administered one
+or felt guided in the process of even being a container user.
+
+so this project is being developed from the start with a container.
+
+* Docker Containers
+
+docker is the application that seems to have popularized containers recently.
+its common at work, so we'll start off with this. there are tons of pre-made
+container images (which i imagine are like ISOs?) including ones prebuilt to
+support ruby. you can customize an image with a script called a Dockerfile.
+
+** Dockerfile
+
+This snippet is all we currently need. ~FROM ruby:3.1.1~ says to use this
+image from the internet, built with Ruby version 3.1.1. its base is actually
+a Debian image, so we see commands to ~apt~ for installing packages required
+for Rails (except postgresql instead of sqlite3).
+
+#+begin_src dockerfile :tangle Dockerfile
+FROM ruby:3.1.1
+RUN apt-get update -qq && apt-get install -y nodejs postgresql-client yarn
+RUN gem install solargraph
+WORKDIR /turdle
+COPY . /turdle
+#+end_src
+
+we're also installing the ~solargraph~ gem. this is the LSP server program for
+Ruby. you can hook your editor to it to get code completion, documentation, and
+linting for this project.
+
+I'm not entirely sure about ~WORKDIR~ but i think it creates the directory
+that the app will run from in the container. then we copy the contents of
+the current directory (the whole turdle project) into that workdir.
+
+i'm sure this could be much more sophisticated, but ~docker compose~ lets
+us to quite a bit of other work with a declarative yaml file.
+
+** defining services with docker-compose.yml 
+
+~docker compose~ is some evolution(?) of docker that lets you configure and run
+various applications as services from the containers. as far as i can tell its
+ergonomics? just a layer on top of docker, its syntax, and commands.
+
+this project is currently defining three services: db, web, and lsp.
+
+#+begin_src yaml :tangle docker-compose.yml :noweb yes
+version: "3.9"
+services:
+  db:
+    <<database-service>>
+  web:
+    <<web-service>>
+  lsp:
+    <<lsp-service>>
+#+end_src
+
+*** db - the database service 😁
+
+the database service is using another prebuilt docker image from the net.
+i don't quite understand the volume here. then the environment will likely
+be expanded to use your local environment file as needed.
+
+#+name: database-service
+#+begin_src yaml
+    image: postgres
+    volumes:
+      - ./tmp/db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: password
+#+end_src
+
+*** web - the rails app service
+
+so it looks like build is saying the context is the current directory and we
+want to build the image defined by the Dockerfile. when it starts up, run the
+command ~bin/start-dev-server~ (documented elsewhere). the current directory
+is mirrored at `/turdle` in the image (maybe COPY is not necessary?). port
+3000 is exposed on your own local 3000 (another thing which could be customized
+with environment variables). and it depends on the db service.
+
+#+name: web-service
+#+begin_src yaml
+    build:
+        context: .
+        dockerfile: Dockerfile
+    command: bin/start-dev-server
+    volumes:
+      - .:/turdle
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+#+end_src
+
+*** lsp - the solargraph language server service
+
+this uses the same image as the web service. perhaps there's a better way to
+do this, i don't quite grok it all yet. however this simply starts up the
+solargraph server on its default port and binds it to the right ip for the
+container->localhost network to function. and we expose the port.
+
+#+name: lsp-service
+#+begin_src yaml
+    build:
+        context: .
+        dockerfile: Dockerfile
+    command: solargraph socket --host=0.0.0.0
+    volumes:
+      - .:/turdle
+    ports:
+      - "7658:7658"
+#+end_src
