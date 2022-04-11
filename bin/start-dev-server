@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+system "bundle check || bundle install"
+system "rm -f tmp/pids/server.pid"
+system "bin/rails s -p 3000 -b 0.0.0.0 -P tmp/pids/server.pid"

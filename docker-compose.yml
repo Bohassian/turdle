@@ -7,11 +7,22 @@ services:
     environment:
       POSTGRES_PASSWORD: password
   web:
-    build: .
-    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
+    build:
+        context: .
+        dockerfile: Dockerfile
+    command: bin/start-dev-server
     volumes:
       - .:/turdle
     ports:
       - "3000:3000"
     depends_on:
       - db
+  lsp:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    command: solargraph socket --host=0.0.0.0
+    volumes:
+      - .:/turdle
+    ports:
+      - "7658:7658"
