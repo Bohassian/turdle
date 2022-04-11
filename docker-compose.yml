@@ -15,14 +15,6 @@ services:
       - .:/turdle
     ports:
       - "3000:3000"
+      - "7658:7658"
     depends_on:
       - db
-  lsp:
-    build:
-        context: .
-        dockerfile: Dockerfile
-    command: solargraph socket --host=0.0.0.0
-    volumes:
-      - .:/turdle
-    ports:
-      - "7658:7658"
