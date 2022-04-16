@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker compose exec web bundle exec solargraph socket --host=0.0.0.0

@@ -23,25 +23,33 @@ a Debian image, so we see commands to ~apt~ for installing packages required
 for Rails (except postgresql instead of sqlite3).
 
 #+begin_src dockerfile :tangle Dockerfile
-FROM ruby:3.1.1
-RUN apt-get update -qq && apt-get install -y nodejs postgresql-client yarn
-RUN gem install solargraph
-WORKDIR /turdle
-COPY . /turdle
+  FROM ruby:3.1.1
+  RUN apt-get update -qq && apt-get install -y nodejs postgresql-client yarn
+  WORKDIR /turdle
+  COPY . /turdle
+  RUN bundle cache
+  RUN bundle install
+  RUN ln -s /turdle/.rubocop.yml /root/.rubocop.yml
 #+end_src
-
-we're also installing the ~solargraph~ gem. this is the LSP server program for
-Ruby. you can hook your editor to it to get code completion, documentation, and
-linting for this project.
 
 I'm not entirely sure about ~WORKDIR~ but i think it creates the directory
 that the app will run from in the container. then we copy the contents of
 the current directory (the whole turdle project) into that workdir.
 
+~bundle cache~ avoids the need to reinstall from scratch when the containers
+go up and down, as we'll have that process check if the Gemfile is modified
+and install or update accordingly.
+
+At the end we're symlinking the rubocop config in the app directory to the
+container's root home directory to workaround a bug with picking up the
+correct path for the configuration.
+
+https://github.com/castwide/solargraph/issues/309#issuecomment-998137438
+
 i'm sure this could be much more sophisticated, but ~docker compose~ lets
 us to quite a bit of other work with a declarative yaml file.
 
-** defining services with docker-compose.yml 
+** Defining Services with docker-compose.yml 
 
 ~docker compose~ is some evolution(?) of docker that lets you configure and run
 various applications as services from the containers. as far as i can tell its
@@ -56,8 +64,6 @@ services:
     <<database-service>>
   web:
     <<web-service>>
-  lsp:
-    <<lsp-service>>
 #+end_src
 
 *** db - the database service 😁
@@ -84,6 +90,9 @@ is mirrored at `/turdle` in the image (maybe COPY is not necessary?). port
 3000 is exposed on your own local 3000 (another thing which could be customized
 with environment variables). and it depends on the db service.
 
+we also expose the default Solargraph LSP server port. there are instructions
+below for running it and connecting your editor.
+
 #+name: web-service
 #+begin_src yaml
     build:
@@ -94,11 +103,14 @@ with environment variables). and it depends on the db service.
       - .:/turdle
     ports:
       - "3000:3000"
+      - "7658:7658"
     depends_on:
       - db
 #+end_src
 
-*** lsp - the solargraph language server service
+*** COMMENT lsp - the solargraph language server service
+
+(seeming better to run it as an exec command in the web service)
 
 this uses the same image as the web service. perhaps there's a better way to
 do this, i don't quite grok it all yet. however this simply starts up the
@@ -110,9 +122,41 @@ container->localhost network to function. and we expose the port.
     build:
         context: .
         dockerfile: Dockerfile
-    command: solargraph socket --host=0.0.0.0
+    command: bin/start-solargraph
     volumes:
       - .:/turdle
     ports:
       - "7658:7658"
 #+end_src
+
+** Installing and Caching Gems / ~start-dev-server~ command
+
+The gems installed into the image by the Dockerfile will be dependent on the
+Gemfile.lock at the time it was built. To keep things up to date as the Gemfile
+changes, we'll write a script to run every time we start the ~web~ service.
+
+#+begin_example ruby :tangle bin/start-dev-server
+  #!/usr/bin/env ruby
+
+  system "bundle check || bundle install"
+  system "rm -f tmp/pids/server.pid"
+  system "bin/rails s -p 3000 -b 0.0.0.0 -P tmp/pids/server.pid"
+#+end_example
+
+* Using Solargraph for Completion and Linting
+
+Use ~bin/start-solargraph~ which will start the LSP server inside the web
+container. You'll need to configure your editor client to connect to it, rather
+than trying to start the server itself.
+
+For VSCode, there's this client setting:
+
+#+begin_src json
+  "solargraph.transport": "external",
+  "solargraph.externalServer": {
+    "host": "localhost",
+    "port": 7658
+  }
+#+end_src
+
+More notes to come.
