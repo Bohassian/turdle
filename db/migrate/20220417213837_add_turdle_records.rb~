@@ -1,0 +1,36 @@
+# frozen_string_literal: true
+
+# Add basic tables to application
+class AddTurdleRecords < ActiveRecord::Migration[7.0]
+  def change
+    create_games
+    create_animals
+    create_guesses
+  end
+
+  def create_games
+    create_table :games do |t|
+      t.string :current_guess
+      t.string :guesses
+      t.integer :round
+      t.belongs_to :animal
+    end
+  end
+
+  def create_animals
+    create_table :animals do |t|
+      t.string :name
+      t.integer :weight
+      t.integer :height
+      t.integer :lifespan
+      t.integer :gestation
+    end
+  end
+
+  def create_guesses
+    create_table :guesses do |t|
+      t.belongs_to :animal
+      t.belongs_to :game
+    end
+  end
+end

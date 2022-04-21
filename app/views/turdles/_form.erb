@@ -1,0 +1,8 @@
+<%# app/views/turdles/_form.html.erb %>
+
+<%= form_for game, url: turdle_path, method: :post, format: :turbo_stream do |f| %>
+  <%= f.number_field :id, {hidden: true} %>
+  <%= f.select :guess, animal_options, input_html: { autofocus: true } %>
+  <%= f.submit "Guess", class: "btn btn--secondary" %>
+<% end %>
+

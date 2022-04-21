@@ -15,7 +15,19 @@ up the contiainers.
 
 * Database creation
 
+run this before trying to connect to localhost:3000
+
+```
+docker compose exec web db:setup
+```
+
 * Database initialization
+
+The initial list of Animals needs to be seeded.
+
+```
+docker compose exec web db:seed
+```
 
 * How to run the test suite
 

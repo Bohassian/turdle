@@ -5,3 +5,18 @@
 #
 #   movies = Movie.create([{ name: "Star Wars" }, { name: "Lord of the Rings" }])
 #   Character.create(name: "Luke", movie: movies.first)
+
+Animal.destroy_all
+
+%w[
+  bear
+  cat
+  deer
+  dog
+  human
+  moose
+  racoon
+  rat
+].each do |animal|
+  Animal.create(name: animal)
+end
