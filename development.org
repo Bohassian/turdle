@@ -24,7 +24,7 @@ for Rails (except postgresql instead of sqlite3).
 
 #+begin_src dockerfile :tangle Dockerfile
   FROM ruby:3.1.1
-  RUN apt-get update -qq && apt-get install -y nodejs postgresql-client yarn
+  RUN apt-get update -qq && apt-get install -y postgresql-client yarn
   WORKDIR /turdle
   COPY . /turdle
   RUN bundle cache
@@ -55,7 +55,8 @@ us to quite a bit of other work with a declarative yaml file.
 various applications as services from the containers. as far as i can tell its
 ergonomics? just a layer on top of docker, its syntax, and commands.
 
-this project is currently defining three services: db, web, and lsp.
+this project is currently defining three services: db, web, and redis.
+redis is used for Rails' Turbo / ActionCable websockets.
 
 #+begin_src yaml :tangle docker-compose.yml :noweb yes
 version: "3.9"
@@ -64,6 +65,8 @@ services:
     <<database-service>>
   web:
     <<web-service>>
+  redis:
+    image: redis
 #+end_src
 
 *** db - the database service 😁
@@ -143,20 +146,31 @@ changes, we'll write a script to run every time we start the ~web~ service.
   system "bin/rails s -p 3000 -b 0.0.0.0 -P tmp/pids/server.pid"
 #+end_example
 
+this means that if you've already built the image, but take down the container,
+pull the repo later (after Gemfile updates), when you bring the container back
+up, it will detect that new gems need to be installed.
+
 * Using Solargraph for Completion and Linting
 
 Use ~bin/start-solargraph~ which will start the LSP server inside the web
 container. You'll need to configure your editor client to connect to it, rather
 than trying to start the server itself.
 
+** VSCode
+
 For VSCode, there's this client setting:
 
 #+begin_src json
-  "solargraph.transport": "external",
-  "solargraph.externalServer": {
-    "host": "localhost",
-    "port": 7658
+  {
+    "solargraph.transport": "external",
+    "solargraph.externalServer": {
+      "host": "localhost",
+      "port": 7658
+    }
   }
 #+end_src
 
-More notes to come.
+** Emacs
+
+This repo includes a [[file:.dir-locals.el][dir-locals file]] that configures Eglot to connect to
+the solargraph server in the container.
