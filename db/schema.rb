@@ -16,6 +16,7 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_17_213837) do
 
   create_table "animals", force: :cascade do |t|
     t.string "name"
+    t.integer "diet"
     t.integer "weight"
     t.integer "height"
     t.integer "lifespan"
