@@ -1,7 +1,14 @@
 <main class="container">
   <h1>Welcome to Turdle!</h1>
 
+  <div id="newgame">
+    <%= link_to "New Game", "/?reset=true" %>
+  </div>
+
+  </br></br> 
+
   <%= render "form", game: @game %>
 
   <div id="guesses"></div>
+  <div id="endgame"></div>
 </main>

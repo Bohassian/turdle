@@ -10,7 +10,9 @@ class Game < ApplicationRecord
 
   attr_accessor :guess
 
-  def check_guess
+  def check_guess(guess)
+    record_guess(guess)
+
     if round_to_guess == animal
       update(won: true)
     else
@@ -18,15 +20,13 @@ class Game < ApplicationRecord
     end
   end
 
-  def guessed_animal
-    @guessed_animal ||= Animal.find(round_to_guess)
-  end
-
   def guesses
     (1..round).map { |i| round_to_guess(i) }.compact.map(&:name)
   end
-  
+
   def record_guess(guess)
+    guess = Animal.find(guess)
+
     case round
     when 1 then update(guess_one: guess)
     when 2 then update(guess_two: guess)
