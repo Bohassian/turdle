@@ -14,7 +14,7 @@ class Game < ApplicationRecord
   # game accordingly. game is won if it matches, otherwise the round
   # incremented by one.
   #
-  # @param guess [Integer] an id of an animal submitted by the select.
+  # @param guess [Animal] Animal submitted by the select.
   def check_guess(guess)
     record_guess(guess)
 
@@ -32,8 +32,6 @@ class Game < ApplicationRecord
   private
 
   def record_guess(guess)
-    guess = Animal.find(guess)
-
     case round
     when 1 then update(guess_one: guess)
     when 2 then update(guess_two: guess)

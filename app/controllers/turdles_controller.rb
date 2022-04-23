@@ -2,11 +2,10 @@
 
 # main entry for the app
 class TurdlesController < ApplicationController
-  before_action :find_or_create_game
-  before_action :check_new_game
+  before_action :check_new_game, :find_or_create_game
 
   def create
-    @game.check_guess(guess)
+    @game.check_guess(guessed_animal)
 
     respond_to do |format|
       format.html { redirect_to root_path, notice: "moo" }
@@ -16,6 +15,7 @@ class TurdlesController < ApplicationController
 
   private
 
+  # @return [Game]
   def find_or_create_game
     return @game = Game.find(session[:game]["id"]) if session[:game]
 
@@ -23,8 +23,9 @@ class TurdlesController < ApplicationController
     session[:game] = @game
   end
 
-  def guess
-    @guess ||= params.dig("game", "guess").to_i
+  # @return [Animal]
+  def guessed_animal
+    @guessed_animal ||= Animal.find(params.dig("game", "guess").to_i)
   end
 
   def check_new_game
