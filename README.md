@@ -1,10 +1,10 @@
 # README
 
-* Configuration
+## Configuration
 
 This application is intended to run via docker. Install it to your system and then run
 
-```
+```sh
 docker compose build
 docker compose up
 ```
@@ -16,24 +16,20 @@ at the end when you bring up the containers.
 If it complains about the `tmp/db` directory (or something else) you may
 need to `chown` it to your user so it will have permission.
 
-* Database creation
+## Database creation & initialization
 
 run this before trying to connect to localhost:3000
-
-```
-docker compose exec web db:setup
-```
-
-* Database initialization
-
 The initial list of Animals needs to be seeded.
 
-```
+
+```sh
+docker compose exec web db:setup
 docker compose exec web db:seed
+
 ```
 
-* Development
+# Development
 
-Check out <./development.org> for details about how the containers are
-set up and how to connect your editor to the solargraph language server
-configured for this project.
+Check out [the development org file](./development.org) for details about
+how the containers are set up and how to connect your editor to the solargraph
+language server configured for this project.
