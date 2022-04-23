@@ -1,4 +1,4 @@
-<%= turbo_stream.replace "guesses", partial: "turdles/guesses", locals: { guesses: @game.guesses } %>
+<%= turbo_stream.append "guesses", @game.guess.name %>
 <%= turbo_stream.update "endgame" do %>
   <% if @game.won %>
     You win!

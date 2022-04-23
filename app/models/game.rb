@@ -10,6 +10,11 @@ class Game < ApplicationRecord
 
   attr_accessor :guess
 
+  # first records the guess passed in, then checks it and updates the
+  # game accordingly. game is won if it matches, otherwise the round
+  # incremented by one.
+  #
+  # @param guess [Integer] an id of an animal submitted by the select.
   def check_guess(guess)
     record_guess(guess)
 
@@ -23,6 +28,8 @@ class Game < ApplicationRecord
   def guesses
     (1..round).map { |i| round_to_guess(i) }.compact.map(&:name)
   end
+
+  private
 
   def record_guess(guess)
     guess = Animal.find(guess)

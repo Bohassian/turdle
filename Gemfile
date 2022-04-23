@@ -70,6 +70,7 @@ group :development do
 
   # Ruby Language Server implementation for completion, docs, and linting!
   gem "solargraph"
+  gem "solargraph-rails"
 end
 
 group :test do

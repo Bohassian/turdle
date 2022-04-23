@@ -17,7 +17,7 @@ class TurdlesController < ApplicationController
   private
 
   def find_or_create_game
-    return @game = Game.includes(:animal).find(session[:game]["id"]) if session[:game]
+    return @game = Game.find(session[:game]["id"]) if session[:game]
 
     @game = Game.create(animal: Animal.all.sample, round: 1)
     session[:game] = @game
