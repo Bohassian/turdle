@@ -1,8 +1,10 @@
 <%# app/views/turdles/_form.html.erb %>
 
-<%= form_for game, url: turdle_path, method: :post, format: :turbo_stream do |f| %>
+<%= form_for game, url: turdle_path, method: :post, html: { class: "flex justify-around"}, format: :turbo_stream do |f| %>
   <%= f.number_field :id, {hidden: true} %>
   <%= f.select :guess, animal_options, input_html: { autofocus: true } %>
-  <%= f.submit "Guess", class: "btn btn--secondary" %>
+  <button class="rounded-md px-5 py-2 bg-blue-600 text-white font-medium">
+    <%= f.submit "Guess"%>
+  </button>
 <% end %>
 

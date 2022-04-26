@@ -1,0 +1,17 @@
+<div class="flex flex-col mx-auto space-y-6 items-center content-center h-36">
+  <div class="flex-1 font-serif text-xl text-black h-8">
+    <h1>Turdle</h1>
+  </div>
+
+  <div class="flex-1 shrink-0 flex-grow">
+    <img class="flex-1 w-full aspect-square" src="/assets/turd.jpg" alt="Turdle">
+  </div>
+
+  <div id="turdle-form" class="flex-1 flex-grow">
+    <%= render "form", game: @game %>
+    <%= link_to "New Game", "/?reset=true" %>
+  </div>
+
+  <div id="guesses" class="flex-1 flex-grow"></div>
+  <div id="endgame" class="flex-1 flex-grow"></div>
+</div>
