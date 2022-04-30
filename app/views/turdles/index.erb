@@ -16,7 +16,9 @@
     <%= render "form", game: @game %>
   </div>
 
-  <div id="guesses" class=""></div>
+  <div id="guesses" class="container grid grid-rows-6 gap-2">
+    <%= render partial: "guess", collection: @game.guesses %>
+  </div>
 
   <div id="endgame" class=""></div>
 

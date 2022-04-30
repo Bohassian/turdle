@@ -1,7 +1,7 @@
 <%=
   turbo_stream.update "guesses",
-  partial: "turdles/guesses",
-  locals: { guesses: @game.guesses }
+  partial: "guess",
+  collection: @game.guesses
 %>
 
 <%= turbo_stream.update "endgame" do %>

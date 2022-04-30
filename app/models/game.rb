@@ -26,10 +26,14 @@ class Game < ApplicationRecord
   end
 
   def guesses
-    (1..round).map { |i| round_to_guess(i) }.compact.map(&:name)
+    (1..6).map { |i| new_guess(i) }
   end
 
   private
+
+  def new_guess(int)
+    Guess.new(round_to_guess(int), animal)
+  end
 
   def record_guess(guess)
     case round
