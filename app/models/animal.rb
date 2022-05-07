@@ -8,4 +8,6 @@
 class Animal < ApplicationRecord
   has_many :games
   has_many :guesses
+
+  enum diet: %i[meat omni herb]
 end
