@@ -7,6 +7,7 @@ services:
     environment:
       POSTGRES_PASSWORD: password
   web:
+    image: turdle
     build:
         context: .
         dockerfile: Dockerfile
@@ -18,5 +19,13 @@ services:
       - "7658:7658"
     depends_on:
       - db
+  tailwind:
+    image: turdle
+    stdin_open: true
+    volumes:
+      - .:/turdle
+    command: "bin/rails tailwindcss:watch"
+    depends_on:
+      - web
   redis:
     image: redis

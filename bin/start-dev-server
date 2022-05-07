@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 system "bundle check || bundle install"
 system "rm -f tmp/pids/server.pid"
