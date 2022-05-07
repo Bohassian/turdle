@@ -18,14 +18,16 @@ class Guess
     guess == answer
   end
 
+  def diet
+    guess.diet
+  end
+
   def diet_correct?
     guess.diet == answer.diet
   end
 
   %i[weight height lifespan gestation].each do |sym|
     define_method("#{sym}_difference".to_sym) do
-      return -1 if guess.send(sym).nil?
-
       guess.send(sym) - answer.send(sym)
     end
   end
