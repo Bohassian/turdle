@@ -1,5 +1,10 @@
 # README
 
+Welcome to Turdle,  the game of animal scat identification!
+
+It is also a learning project for Rails 7, Turbo, and Tailwind CSS. We have tried to wrap
+the development environment nicely in a container for you, see below.
+
 ## Configuration
 
 This application is intended to run via docker. Install it to your system and then run
@@ -19,13 +24,11 @@ need to `chown` it to your user so it will have permission.
 ## Database creation & initialization
 
 run this before trying to connect to localhost:3000
-The initial list of Animals needs to be seeded.
-
+The initial list of `Animal`s needs to be seeded.
 
 ```sh
 docker compose exec web db:setup
 docker compose exec web db:seed
-
 ```
 
 # Development

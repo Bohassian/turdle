@@ -1,12 +1,13 @@
 * A suggestion on how to dev on Turdle
 
 this project is an opportunity to learn a thing or two while hacking on
-a silly and brilliant idea. one of those things is "containers". a project
+a silly yet brilliant idea. one of those things is "containers". a project
 provided with a container promises a consistent development experience
 from one machine to another. yet, i (grant) have never administered one
 or felt guided in the process of even being a container user.
 
-so this project is being developed from the start with a container.
+This document should also serve to describe a useful base setup for containerized
+Ruby development in general.
 
 * Docker Containers
 
@@ -19,7 +20,7 @@ support ruby. you can customize an image with a script called a Dockerfile.
 
 This snippet is all we currently need. ~FROM ruby:3.1.1~ says to use this
 image from the internet, built with Ruby version 3.1.1. its base is actually
-a Debian image, so we see commands to ~apt~ for installing packages required
+a Debian image, so we ~RUN apt-get ...~ for installing packages required
 for Rails (except postgresql instead of sqlite3).
 
 #+begin_src dockerfile :tangle Dockerfile
@@ -27,53 +28,71 @@ for Rails (except postgresql instead of sqlite3).
   RUN apt-get update -qq && apt-get install -y postgresql-client yarn
   WORKDIR /turdle
   COPY . /turdle
-  RUN bundle cache
   RUN bundle install
   RUN ln -s /turdle/.rubocop.yml /root/.rubocop.yml
 #+end_src
 
+*** WORKDIR
+
 I'm not entirely sure about ~WORKDIR~ but i think it creates the directory
-that the app will run from in the container. then we copy the contents of
-the current directory (the whole turdle project) into that workdir.
+that the app will run from in the container.
 
-~bundle cache~ avoids the need to reinstall from scratch when the containers
-go up and down, as we'll have that process check if the Gemfile is modified
-and install or update accordingly.
+Here's the Docker description of it:
 
-At the end we're symlinking the rubocop config in the app directory to the
-container's root home directory to workaround a bug with picking up the
-correct path for the configuration.
+#+begin_quote
+The WORKDIR instruction sets the working directory for any RUN, CMD, ENTRYPOINT, COPY and ADD
+instructions that follow it in the Dockerfile. If the WORKDIR doesn’t exist, it will be created even if
+it’s not used in any subsequent Dockerfile instruction.
+#+end_quote
+
+So the ~RUN~ commands at the end of the file will be executed in the ~WORKDIR~
+
+*** COPY the project and set it up.
+
+Next we copy the contents of the current directory (the whole turdle project)
+into the same directory as WORKDIR. ~RUN bundle install~ downloads and
+sets up the Gems used by the application.
+
+At the end we symlink the rubocop config in the app directory to the container's
+root home directory to workaround a bug with picking up the correct path
+for the configuration.
 
 https://github.com/castwide/solargraph/issues/309#issuecomment-998137438
 
 i'm sure this could be much more sophisticated, but ~docker compose~ lets
-us to quite a bit of other work with a declarative yaml file.
+us do quite a bit of other work with a declarative yaml file.
 
-** Defining Services with docker-compose.yml 
+* Docker Compose Dev Services
 
 ~docker compose~ is some evolution(?) of docker that lets you configure and run
 various applications as services from the containers. as far as i can tell its
 ergonomics? just a layer on top of docker, its syntax, and commands.
 
-this project is currently defining three services: db, web, and redis.
-redis is used for Rails' Turbo / ActionCable websockets.
+** Defining Services with docker-compose.yml
+
+Here is the high level skeleton of the docker compose file:
 
 #+begin_src yaml :tangle docker-compose.yml :noweb yes
-version: "3.9"
-services:
-  db:
-    <<database-service>>
-  web:
-    <<web-service>>
-  redis:
-    image: redis
+  version: "3.9"
+  services:
+    db:
+      <<database-service>>
+    web:
+      <<web-service>>
+    tailwind:
+      <<tailwind-service>>
+    redis:
+      image: redis
 #+end_src
 
-*** db - the database service 😁
+This project defines four services: db, web, tailwind, and redis. Each
+one will be described in more detail below, aside from ~redis~ which is
+currently using the defaults defined in its ~image~. Redis is used to support
+Rails' Turbo / ActionCable websockets.
 
-the database service is using another prebuilt docker image from the net.
-i don't quite understand the volume here. then the environment will likely
-be expanded to use your local environment file as needed.
+** db - the database service 😁
+
+The database service is using another prebuilt docker image from the net:
 
 #+name: database-service
 #+begin_src yaml
@@ -84,55 +103,79 @@ be expanded to use your local environment file as needed.
       POSTGRES_PASSWORD: password
 #+end_src
 
-*** web - the rails app service
+We set up a ~volume~ in order to persist the database outside of the container.
+The ~environment~ attribute lets us set any variables needed for the service to
+run properly. In this case, we need a password for the postgres database.
 
-so it looks like build is saying the context is the current directory and we
-want to build the image defined by the Dockerfile. when it starts up, run the
-command ~bin/start-dev-server~ (documented elsewhere). the current directory
-is mirrored at `/turdle` in the image (maybe COPY is not necessary?). port
-3000 is exposed on your own local 3000 (another thing which could be customized
-with environment variables). and it depends on the db service.
+** web - the rails app service
 
-we also expose the default Solargraph LSP server port. there are instructions
-below for running it and connecting your editor.
+This is our application's primary service. This configuration describes how to build
+our custom container, expose required network ports, and start up the rails server.
 
 #+name: web-service
 #+begin_src yaml
-    build:
-        context: .
-        dockerfile: Dockerfile
-    command: bin/start-dev-server
-    volumes:
-      - .:/turdle
-    ports:
-      - "3000:3000"
-      - "7658:7658"
-    depends_on:
-      - db
+  image: turdle
+  build:
+      context: .
+      dockerfile: Dockerfile
+  command: bin/start-dev-server
+  volumes:
+    - .:/turdle
+  ports:
+    - "3000:3000"
+    - "7658:7658"
+  depends_on:
+    - db
+    - redis
 #+end_src
 
-*** COMMENT lsp - the solargraph language server service
+This definition uses ~image~ to name the container built by the ~build~ declaration.
+Otherwise we can't re-use this image for additional services. We're building the image
+defined in the ~Dockerfile~ described above.
 
-(seeming better to run it as an exec command in the web service)
+~command bin/start-dev-server~ runs the script (documented elsewhere)
+used to start-up the rails server with the latest gems in the Gemfile.
 
-this uses the same image as the web service. perhaps there's a better way to
-do this, i don't quite grok it all yet. however this simply starts up the
-solargraph server on its default port and binds it to the right ip for the
-container->localhost network to function. and we expose the port.
+Setting up the ~volume~ here ensures that any changes made inside the container will
+persist into our project. Rails commands can be used to generate files we'd like to edit
+and commit into the repo.
 
-#+name: lsp-service
+*NOTE* files created in the container might be owned by ~root~ and will
+need to be ~chown~ ed.
+
+Port 3000 of the container is exposed on your own local 3000 (another thing
+which could be customized with environment variables). we also expose the
+default Solargraph LSP server port. there are instructions below for running
+it and connecting your editor.
+
+The ~depends_on~ declaration says we need to start the db and redis services
+before this one. In general it lets you control startup order of the various services.
+
+** tailwind - watch for style changes and regenerate CSS
+
+Tailwind dynamically generates CSS for the application based on the classes
+in the source code, and requires a process to watch and rebuild as things
+change in development.
+
+#+name: tailwind-service
 #+begin_src yaml
-    build:
-        context: .
-        dockerfile: Dockerfile
-    command: bin/start-solargraph
+    image: turdle
+    command: "bin/rails tailwindcss:watch"
+    stdin_open: true
     volumes:
       - .:/turdle
-    ports:
-      - "7658:7658"
 #+end_src
 
-** Installing and Caching Gems / ~start-dev-server~ command
+We reuse the turdle image defined in the ~web~ service above which already
+has everything installed. The command for this service starts up the process
+which will watch for changes in our project and generate the CSS.
+
+However, we need to set `stdin_open: true` because the tailwind watch process
+acually exits and closes `stdin` after each rebuild. We also *must* use
+the volume here because tailwind is generating files as it runs. These
+were some frustrating quirks to sort through, but the solution was straightforward.
+
+* Installing and Caching Gems / ~start-dev-server~ command
 
 The gems installed into the image by the Dockerfile will be dependent on the
 Gemfile.lock at the time it was built. To keep things up to date as the Gemfile
@@ -140,6 +183,7 @@ changes, we'll write a script to run every time we start the ~web~ service.
 
 #+begin_example ruby :tangle bin/start-dev-server
   #!/usr/bin/env ruby
+  # frozen_string_literal: true
 
   system "bundle check || bundle install"
   system "rm -f tmp/pids/server.pid"
@@ -174,3 +218,7 @@ For VSCode, there's this client setting:
 
 This repo includes a [[file:.dir-locals.el][dir-locals file]] that configures Eglot to connect to
 the solargraph server in the container.
+
+However, there are some problems with the normal functionality of solargraph
+when running inside the container. It cannot seem to properly connect to the
+project / gems / path. Still investigating this frustrating shortcoming.

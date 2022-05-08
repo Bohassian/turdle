@@ -19,13 +19,12 @@ services:
       - "7658:7658"
     depends_on:
       - db
+      - redis
   tailwind:
     image: turdle
+    command: "bin/rails tailwindcss:watch"
     stdin_open: true
     volumes:
       - .:/turdle
-    command: "bin/rails tailwindcss:watch"
-    depends_on:
-      - web
   redis:
     image: redis
