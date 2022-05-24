@@ -27,8 +27,8 @@ run this before trying to connect to localhost:3000
 The initial list of `Animal`s needs to be seeded.
 
 ```sh
-docker compose exec web db:setup
-docker compose exec web db:seed
+docker compose exec web rails db:setup
+docker compose exec web rails db:seed
 ```
 
 # Development
