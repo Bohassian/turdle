@@ -28,7 +28,6 @@ The initial list of `Animal`s needs to be seeded.
 
 ```sh
 docker compose exec web rails db:setup
-docker compose exec web rails db:seed
 ```
 
 # Development
